@@ -31,6 +31,8 @@ CFLAGS	= $(CPPFLAGS) $(USBFLAGS) -O -g -Wall -std=c99 -Wno-pointer-sign
 LIBS	= $(USBLIBS)
 
 PROGRAM = $(NAME)$(EXE_SUFFIX)
+INSTALL = install
+bindir = /usr/bin
 
 
 all: $(PROGRAM)
@@ -40,6 +42,9 @@ all: $(PROGRAM)
 
 $(PROGRAM): $(OBJECTS)
 	$(CC) -o $(PROGRAM) $(OBJECTS) $(LIBS)
+
+install: $(PROGRAM)
+	$(INSTALL) -D -m0755 $(PROGRAM) $(DESTDIR)$(bindir)$(PROGRAM)
 
 strip: $(PROGRAM)
 	strip $(PROGRAM)
