@@ -85,33 +85,6 @@ static int shellStyleMatch(char *text, char *pattern)
 
 /* ------------------------------------------------------------------------- */
 
-int usbGetStringAscii(libusb_device_handle *dev, int index, char *buf, int buflen)
-{
-    char    buffer[256];
-    int     rval, i;
-
-    if((rval = libusb_get_string_descriptor_ascii(dev, index & 0xff, (unsigned char*)buf, buflen)) >= 0)
-        return rval;
-
-    return -1;
-
-    // if(buffer[1] != USB_DT_STRING){
-    //     *buf = 0;
-    //     return 0;
-    // }
-    // if((unsigned char)buffer[0] < rval)
-    //     rval = (unsigned char)buffer[0];
-    // rval /= 2;
-    // /* lossy conversion to ISO Latin1: */
-    // for(i=1;i<rval;i++){
-    //     if(i > buflen)              /* destination buffer overflow */
-    //         break;
-    //     buf[i-1] = buffer[2 * i];
-    //     if(buffer[2 * i + 1] != 0)  /* outside of ISO Latin1 range */
-    //         buf[i-1] = '?';
-    // }
-    // buf[i-1] = 0;
-    // return i-1;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -133,7 +106,7 @@ int usbOpenDevice(libusb_device_handle **device, int vendorID, char *vendorNameP
 
         if((vendorID == 0 || desc.idVendor == vendorID) 
            && (productID == 0 || desc.idProduct == productID)) {
-            char    vendor[256], product[256], serial[256];
+            unsigned char vendor[256], product[256], serial[256];
             int len = 0;
             r = libusb_open(dev, &handle);
             if (r < 0) {
@@ -148,7 +121,7 @@ int usbOpenDevice(libusb_device_handle **device, int vendorID, char *vendorNameP
 
             len = vendor[0] = 0;
             if (desc.iManufacturer > 0) {
-                len = usbGetStringAscii(handle, desc.iManufacturer, vendor, sizeof(vendor));
+                len = libusb_get_string_descriptor_ascii(handle, desc.iManufacturer, vendor, sizeof(vendor));
             }
 
             if (len < 0) {
@@ -161,7 +134,7 @@ int usbOpenDevice(libusb_device_handle **device, int vendorID, char *vendorNameP
                 if(shellStyleMatch(vendor, vendorNamePattern)){
                     len = product[0] = 0;
                     if(desc.iProduct > 0){
-                        len = usbGetStringAscii(handle, desc.iProduct, product, sizeof(product));
+                        len = libusb_get_string_descriptor_ascii(handle, desc.iProduct, product, sizeof(product));
                     }
                     if(len < 0){
                         errorCode = USBOPEN_ERR_ACCESS;
@@ -173,7 +146,7 @@ int usbOpenDevice(libusb_device_handle **device, int vendorID, char *vendorNameP
                         if(shellStyleMatch(product, productNamePattern)){
                             len = serial[0] = 0;
                             if(desc.iSerialNumber > 0){
-                                len = usbGetStringAscii(handle, desc.iSerialNumber, serial, sizeof(serial));
+                                len = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, serial, sizeof(serial));
                             }
                             if(len < 0){
                                 errorCode = USBOPEN_ERR_ACCESS;
