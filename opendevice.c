@@ -85,11 +85,223 @@ static int shellStyleMatch(char *text, char *pattern)
 
 /* ------------------------------------------------------------------------- */
 
+static int usbGetStringAsciiOrWarn(libusb_device_handle *handle, int index,
+								   char *buf, int buflen, FILE *err) {
+	int len;
+
+	len = libusb_get_string_descriptor_ascii(handle, index, buf, buflen);
+
+	if (len < 0 && err) {
+		fprintf(err, "WARNING: Cannot query string: %s\n",
+				libusb_error_name(len));
+	}
+
+	return len;
 }
 
-/* ------------------------------------------------------------------------- */
+static void printClass(int classNum, FILE *out) {
+	switch (classNum) {
+	   case LIBUSB_CLASS_PER_INTERFACE:
+		  fprintf(out, "per interface");
+		  break;
+	   case LIBUSB_CLASS_AUDIO:
+		  fprintf(out, "audio");
+		  break;
+	   case LIBUSB_CLASS_COMM:
+		  fprintf(out, "communications");
+		  break;
+	   case LIBUSB_CLASS_HID:
+		  fprintf(out, "HID");
+		  break;
+	   case LIBUSB_CLASS_PHYSICAL:
+		  fprintf(out, "physical");
+		  break;
+	   case LIBUSB_CLASS_IMAGE:
+		  fprintf(out, "image");
+		  break;
+	   case LIBUSB_CLASS_PRINTER:
+		  fprintf(out, "printer");
+		  break;
+	   case LIBUSB_CLASS_MASS_STORAGE:
+		  fprintf(out, "mass storage");
+		  break;
+	   case LIBUSB_CLASS_HUB:
+		  fprintf(out, "hub");
+		  break;
+	   case LIBUSB_CLASS_DATA:
+		  fprintf(out, "data");
+		  break;
+	   case LIBUSB_CLASS_SMART_CARD:
+		  fprintf(out, "smart card");
+		  break;
+	   case LIBUSB_CLASS_CONTENT_SECURITY:
+		  fprintf(out, "content security");
+		  break;
+	   case LIBUSB_CLASS_VIDEO:
+		  fprintf(out, "video");
+		  break;
+	   case LIBUSB_CLASS_PERSONAL_HEALTHCARE:
+		  fprintf(out, "personal healthcare");
+		  break;
+	   case LIBUSB_CLASS_DIAGNOSTIC_DEVICE:
+		  fprintf(out, "diagnostic device");
+		  break;
+	   case LIBUSB_CLASS_WIRELESS:
+		  fprintf(out, "wireless");
+		  break;
+	   case LIBUSB_CLASS_MISCELLANEOUS:
+		  fprintf(out, "misc");
+		  break;
+	   case LIBUSB_CLASS_APPLICATION:
+		  fprintf(out, "app");
+	   case LIBUSB_CLASS_VENDOR_SPEC:
+		  fprintf(out, "vendor-specific");
+		  break;
+	   default:
+		  fprintf(out, "UNKNOWN!");
+	}
+}
 
-int usbOpenDevice(libusb_device_handle **device, int vendorID, char *vendorNamePattern, int productID, char *productNamePattern, char *serialNamePattern, FILE *printMatchingDevicesFp, FILE *warningsFp)
+static void printDetails(libusb_device_handle *handle,
+						 libusb_device *dev, FILE *out, FILE *err) {
+	struct libusb_device_descriptor desc;
+	unsigned char stringbuf[256];
+
+    if (!out) return;
+
+	int r = libusb_get_device_descriptor(dev, &desc);
+	if (r < 0) {
+        fprintf(err, "Warning: Failed to get device descriptor.\n");
+		return;
+	}
+
+    fprintf(out, "\tDevice class: %02Xh ", desc.bDeviceClass);
+	printClass(desc.bDeviceClass, out);
+	fprintf(out, "\n");
+
+	fprintf(out, "\tSubclass: %02Xh\n", desc.bDeviceSubClass);
+
+	fprintf(out, "\tProtocol: %02Xh\n", desc.bDeviceProtocol);
+
+    fprintf(out, "\tConfigurations (%i):\n", desc.bNumConfigurations);
+
+	for (int c = 0; c < desc.bNumConfigurations; c++) {
+		struct libusb_config_descriptor *config = NULL;
+		libusb_get_config_descriptor(dev, c, &config);
+
+		fprintf(out, "\t\t[%i]Configuration: %i %02Xh\n",
+				c, config->bConfigurationValue,
+				config->bConfigurationValue);
+
+		if (usbGetStringAsciiOrWarn(handle, config->iConfiguration,
+									stringbuf, sizeof(stringbuf),
+									err) > 0) {
+			fprintf(out, "\t\t\tDescription: %s\n", stringbuf);
+		}
+
+		fprintf(out, "\t\t\tInterfaces (%i):\n", config->bNumInterfaces);
+
+		const struct libusb_interface *inter;
+		const struct libusb_interface_descriptor *interdesc;
+		const struct libusb_endpoint_descriptor *epdesc;
+
+		for (int i = 0; i < config->bNumInterfaces; i++) {
+			inter = &config->interface[i];
+
+			fprintf(out, "\t\t\t\t[%i] Alternate settings (%i):\n",
+					i, inter->num_altsetting);
+
+			for(int j = 0; j < inter->num_altsetting; j++) {
+				interdesc = &inter->altsetting[j];
+
+				fprintf(out, "\t\t\t\t\t[%i] Setting: %i %02Xh\n",
+						j, interdesc->bAlternateSetting,
+						interdesc->bAlternateSetting);
+
+				fprintf(out, "\t\t\t\t\t\tInterface number: %i %02Xh\n",
+						interdesc->bInterfaceNumber,
+						interdesc->bInterfaceNumber);
+
+				fprintf(out, "\t\t\t\t\t\tInterface class: %02Xh ",
+						interdesc->bInterfaceClass);
+				printClass(interdesc->bInterfaceClass, out);
+				fprintf(out, "\n");
+
+				fprintf(out, "\t\t\t\t\t\tSubclass: %02Xh ",
+						interdesc->bInterfaceSubClass);
+
+				fprintf(out, "\t\t\t\t\t\tProtocol: %02Xh ",
+						interdesc->bInterfaceProtocol);
+
+				if (usbGetStringAsciiOrWarn(handle, interdesc->iInterface,
+											stringbuf, sizeof(stringbuf),
+											err) > 0) {
+					fprintf(out, "\t\t\t\t\t\tDescription: %s\n", stringbuf);
+				}
+
+				fprintf(out, "\t\t\t\t\t\tEndpoints (%i):\n",
+						interdesc->bNumEndpoints);
+
+				for(int k = 0; k < interdesc->bNumEndpoints; k++) {
+					epdesc = &interdesc->endpoint[k];
+
+					fprintf(out, "\t\t\t\t\t\t\t[%i]Endpoint: %i %02Xh ",
+							k, epdesc->bEndpointAddress,
+							epdesc->bEndpointAddress);
+                    switch (epdesc->bmAttributes & 0x04) {
+    				   case LIBUSB_ENDPOINT_TRANSFER_TYPE_CONTROL:
+    					  fprintf(out, "control");
+    					  break;
+    				   case LIBUSB_ENDPOINT_TRANSFER_TYPE_ISOCHRONOUS:
+    					  fprintf(out, "isochronous");
+    					  switch (epdesc->bmAttributes & 0x0c) {
+    						 case LIBUSB_ISO_SYNC_TYPE_NONE:
+    							fprintf(out, " nosync");
+    							break;
+    						 case LIBUSB_ISO_SYNC_TYPE_ASYNC:
+    							fprintf(out, " async");
+    							break;
+    						 case LIBUSB_ISO_SYNC_TYPE_ADAPTIVE:
+    							fprintf(out, " adaptive");
+    							break;
+    						 case LIBUSB_ISO_SYNC_TYPE_SYNC:
+    							fprintf(out, " sync");
+    							break;
+    						 default:
+    							fprintf(out, " UNKNOWN!");
+    					  }
+    					  switch (epdesc->bmAttributes & 0x30) {
+    						 case LIBUSB_ISO_USAGE_TYPE_DATA:
+    							fprintf(out, " data");
+    							break;
+    						 case LIBUSB_ISO_USAGE_TYPE_FEEDBACK:
+    							fprintf(out, " feedback");
+    							break;
+    						 case LIBUSB_ISO_USAGE_TYPE_IMPLICIT:
+    							fprintf(out, " implicit");
+    						 default:
+    							fprintf(out, " UNKNOWN!");
+    					  }
+    					  break;
+    				   case LIBUSB_ENDPOINT_TRANSFER_TYPE_BULK:
+    					  fprintf(out, "bulk");
+    					  break;
+    				   case LIBUSB_ENDPOINT_TRANSFER_TYPE_INTERRUPT:
+    					  fprintf(out, "interrupt");
+    					  break;
+    				   default:
+    					  fprintf(out, "UNKNOWN!");
+    				}
+    				fprintf(out, "\n");
+				}
+			}
+		}
+
+		libusb_free_config_descriptor(config);
+	}
+}
+
+int usbOpenDevice(libusb_device_handle **device, int vendorID, char *vendorNamePattern, int productID, char *productNamePattern, char *serialNamePattern, FILE *printMatchingDevicesFp, FILE *warningsFp, int verbose)
 {
     libusb_device_handle      *handle = NULL;
     int                 errorCode = USBOPEN_ERR_NOTFOUND;
@@ -160,6 +372,8 @@ int usbOpenDevice(libusb_device_handle **device, int vendorID, char *vendorNameP
                                     }else{
                                         fprintf(printMatchingDevicesFp, "VID=0x%04x PID=0x%04x vendor=\"%s\" product=\"%s\" serial=\"%s\"\n", desc.idVendor, desc.idProduct, vendor, product, serial);
                                     }
+									if (verbose)
+										printDetails(handle, dev, printMatchingDevicesFp, warningsFp);
                                 }else{
                                     break;
                                 }

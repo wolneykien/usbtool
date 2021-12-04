@@ -54,9 +54,11 @@ static void usage(char *name)
         "  -c <configuration> (device configuration to choose)\n"
         "  -i <interface> (configuration interface to claim)\n"
         "  -w (suppress USB warnings, default is verbose)\n"
+        "  -I (show more information about each device in the list)\n"
         "\n"
         "Commands are:\n"
         "  list (list all matching devices by name)\n"
+        "  info (print information about each matching device)\n"
         "  control in|out <type> <recipient> <request> <value> <index> (send control request)\n"
         "  interrupt in|out (send or receive interrupt data)\n"
         "  bulk in|out (send or receive bulk data)\n"
@@ -85,6 +87,7 @@ static char *outputFile = NULL;
 static int  endpoint = 0;
 static int  outputFormatIsBinary = 0;
 static int  showWarnings = 1;
+static int  verbose = 0;
 static int  usbTimeout = 5000;
 static int  usbCount = 64;
 static int  usbConfiguration = 1;
@@ -229,6 +232,8 @@ int main(int argc, char **argv)
         case 'w':   /* -w (suppress USB warnings, default is verbose) */
             showWarnings = 0;
             break;
+        case 'I':
+            verbose = 1;
         default:
             fprintf(stderr, "Option -%c unknown\n", opt);
             exit(1);
@@ -251,6 +256,10 @@ int main(int argc, char **argv)
         action = ACTION_INTERRUPT;
     }else if(strcasecmp(argv[0], "bulk") == 0){
         action = ACTION_BULK;
+    }else if(strcasecmp(argv[0], "info") == 0){
+        action = ACTION_LIST;
+        verbose = 1;
+        argcnt = 1;
     }else{
         fprintf(stderr, "command %s not known\n", argv[0]);
         usage(myName);
@@ -276,7 +285,7 @@ int main(int argc, char **argv)
     libusb_set_debug(usbCtx, 3);
 #endif
 
-    if(usbOpenDevice(&handle, vendorID, vendorNamePattern, productID, productNamePattern, serialPattern, action == ACTION_LIST ? stdout : NULL, showWarnings ? stderr : NULL) != 0){
+    if(usbOpenDevice(&handle, vendorID, vendorNamePattern, productID, productNamePattern, serialPattern, action == ACTION_LIST ? stdout : NULL, showWarnings ? stderr : NULL, verbose) != 0){
         fprintf(stderr, "Could not find USB device with VID=0x%x PID=0x%x Vname=%s Pname=%s Serial=%s\n", vendorID, productID, vendorNamePattern, productNamePattern, serialPattern);
         exit(1);
     }
