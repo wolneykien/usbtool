@@ -44,7 +44,7 @@ $(PROGRAM): $(OBJECTS)
 	$(CC) -o $(PROGRAM) $(OBJECTS) $(LIBS)
 
 install: $(PROGRAM)
-	$(INSTALL) -D -m0755 $(PROGRAM) $(DESTDIR)$(bindir)$(PROGRAM)
+	$(INSTALL) -D -m0755 $(PROGRAM) $(DESTDIR)$(bindir)/$(PROGRAM)
 
 strip: $(PROGRAM)
 	strip $(PROGRAM)
