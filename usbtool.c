@@ -269,7 +269,13 @@ int main(int argc, char **argv)
         fprintf(stderr, "Failed to initialize libusb %d", r);
         exit(1);
     }
+
+#if LIBUSB_API_VERSION >= 0x01000106
+    libusb_set_option(usbCtx, LIBUSB_OPTION_LOG_LEVEL, 3);
+#else
     libusb_set_debug(usbCtx, 3);
+#endif
+
     if(usbOpenDevice(&handle, vendorID, vendorNamePattern, productID, productNamePattern, serialPattern, action == ACTION_LIST ? stdout : NULL, showWarnings ? stderr : NULL) != 0){
         fprintf(stderr, "Could not find USB device with VID=0x%x PID=0x%x Vname=%s Pname=%s Serial=%s\n", vendorID, productID, vendorNamePattern, productNamePattern, serialPattern);
         exit(1);
