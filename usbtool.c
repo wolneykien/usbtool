@@ -344,10 +344,10 @@ int main(int argc, char **argv)
         /* now try to claim the interface and detach the kernel HID driver on
          * linux and other operating systems which support the call.
          */
-        while((len = libusb_claim_interface(handle, usbInterface)) != 0 && retries-- > 0){
+        while((len = libusb_claim_interface(handle, usbInterface)) != 0 && retries-- > 0) {
 #ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
-            if((r = libusb_detach_kernel_driver(handle, 0)) < 0 && showWarnings){
-                fprintf(stderr, "Warning: could not detach kernel driver: %s\n", libusb_error_name(r)));
+            if ((r = libusb_detach_kernel_driver(handle, 0)) < 0 && showWarnings) {
+                fprintf(stderr, "Warning: could not detach kernel driver: %s\n", libusb_error_name(r));
             }
 #endif
         }
