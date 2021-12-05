@@ -252,15 +252,15 @@ static void printDetails(libusb_device_handle *handle,
 							k, epdesc->bEndpointAddress,
 							epdesc->bEndpointAddress,
                             LIBUSB_ENDPOINT_IN ==
-                                (epdesc->bEndpointAddress & 0x80) ?
+                                (epdesc->bEndpointAddress & LIBUSB_ENDPOINT_DIR_MASK) ?
                                     "IN" : "OUT ");
-                    switch (epdesc->bmAttributes & 0x03) {
+                    switch (epdesc->bmAttributes & LIBUSB_TRANSFER_TYPE_MASK) {
     				   case LIBUSB_ENDPOINT_TRANSFER_TYPE_CONTROL:
     					  fprintf(out, "control");
     					  break;
     				   case LIBUSB_ENDPOINT_TRANSFER_TYPE_ISOCHRONOUS:
     					  fprintf(out, "isochronous");
-    					  switch (epdesc->bmAttributes & 0x0c) {
+    					  switch (epdesc->bmAttributes & LIBUSB_ISO_SYNC_TYPE_MASK) {
     						 case LIBUSB_ISO_SYNC_TYPE_NONE:
     							fprintf(out, " nosync");
     							break;
@@ -276,7 +276,7 @@ static void printDetails(libusb_device_handle *handle,
     						 default:
     							fprintf(out, " UNKNOWN!");
     					  }
-    					  switch (epdesc->bmAttributes & 0x30) {
+    					  switch (epdesc->bmAttributes & LIBUSB_ISO_USAGE_TYPE_MASK) {
     						 case LIBUSB_ISO_USAGE_TYPE_DATA:
     							fprintf(out, " data");
     							break;
