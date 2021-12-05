@@ -248,10 +248,12 @@ static void printDetails(libusb_device_handle *handle,
 				for(int k = 0; k < interdesc->bNumEndpoints; k++) {
 					epdesc = &interdesc->endpoint[k];
 
-					fprintf(out, "              [%i] Endpoint: %i %02Xh ",
+					fprintf(out, "              [%i] Endpoint: %i %02Xh %s ",
 							k, epdesc->bEndpointAddress,
-							epdesc->bEndpointAddress);
-                    switch (epdesc->bmAttributes & 0x04) {
+							epdesc->bEndpointAddress,
+                            LIBUSB_ENDPOINT_IN ==
+                                (epdesc->bEndpointAddress & 0x80) ?
+                                    "IN" : "OUT ");
                     switch (epdesc->bmAttributes & 0x03) {
     				   case LIBUSB_ENDPOINT_TRANSFER_TYPE_CONTROL:
     					  fprintf(out, "control");
