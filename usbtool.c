@@ -279,18 +279,44 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+    if (showWarnings && ACTION_LIST != action) {
 #if LIBUSB_API_VERSION >= 0x01000106
-    libusb_set_option(usbCtx, LIBUSB_OPTION_LOG_LEVEL, 3);
+        libusb_set_option(usbCtx, LIBUSB_OPTION_LOG_LEVEL, 3);
 #else
-    libusb_set_debug(usbCtx, 3);
+        libusb_set_debug(usbCtx, 3);
 #endif
-
-    if(usbOpenDevice(&handle, vendorID, vendorNamePattern, productID, productNamePattern, serialPattern, action == ACTION_LIST ? stdout : NULL, showWarnings ? stderr : NULL, verbose) != 0){
-        fprintf(stderr, "Could not find USB device with VID=0x%x PID=0x%x Vname=%s Pname=%s Serial=%s\n", vendorID, productID, vendorNamePattern, productNamePattern, serialPattern);
-        exit(1);
     }
-    if(action == ACTION_LIST)
-        exit(0);                /* we've done what we were asked to do already */
+
+    switch (action) {
+    case ACTION_LIST:
+        r = usbOpenDevice(NULL, vendorID, vendorNamePattern, productID,
+                          productNamePattern, serialPattern,
+                          stdout, showWarnings ? stderr : NULL,
+                          verbose);
+        exit(r);
+        break;
+    default:
+        r = usbOpenDevice(&handle, vendorID, vendorNamePattern, productID,
+                          productNamePattern, serialPattern,
+                          stderr, showWarnings ? stderr : NULL,
+                          verbose);
+    }
+
+    if (USBOPEN_SUCCESS != r) {
+        switch (r) {
+        case USBOPEN_ERR_NOTFOUND:
+            fprintf(stderr, "Could not find USB device with VID=0x%x PID=0x%x Vname=%s Pname=%s Serial=%s\n", vendorID, productID, vendorNamePattern, productNamePattern, serialPattern);
+            break;
+        case USBOPEN_ERR_ACCESS:
+            fprintf(stderr, "No enough access to VID=0x%x PID=0x%x Vname=%s Pname=%s Serial=%s\n", vendorID, productID, vendorNamePattern, productNamePattern, serialPattern);
+            break;
+        default:
+            fprintf(stderr, "Unexpected error!\n");
+        }
+        if (handle) libusb_close(handle);
+        exit (r);
+    }
+
     usbDirection = parseEnum(argv[1], "out", "in", NULL);
     if(usbDirection){   /* IN transfer */
         rxBuffer = malloc(usbCount);
