@@ -252,6 +252,7 @@ static void printDetails(libusb_device_handle *handle,
 							k, epdesc->bEndpointAddress,
 							epdesc->bEndpointAddress);
                     switch (epdesc->bmAttributes & 0x04) {
+                    switch (epdesc->bmAttributes & 0x03) {
     				   case LIBUSB_ENDPOINT_TRANSFER_TYPE_CONTROL:
     					  fprintf(out, "control");
     					  break;
