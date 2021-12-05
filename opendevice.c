@@ -178,31 +178,31 @@ static void printDetails(libusb_device_handle *handle,
 		return;
 	}
 
-    fprintf(out, "\tDevice class: %02Xh ", desc.bDeviceClass);
+    fprintf(out, "  Device class: %02Xh ", desc.bDeviceClass);
 	printClass(desc.bDeviceClass, out);
 	fprintf(out, "\n");
 
-	fprintf(out, "\tSubclass: %02Xh\n", desc.bDeviceSubClass);
+	fprintf(out, "  Subclass: %02Xh\n", desc.bDeviceSubClass);
 
-	fprintf(out, "\tProtocol: %02Xh\n", desc.bDeviceProtocol);
+	fprintf(out, "  Protocol: %02Xh\n", desc.bDeviceProtocol);
 
-    fprintf(out, "\tConfigurations (%i):\n", desc.bNumConfigurations);
+    fprintf(out, "  Configurations (%i):\n", desc.bNumConfigurations);
 
 	for (int c = 0; c < desc.bNumConfigurations; c++) {
 		struct libusb_config_descriptor *config = NULL;
 		libusb_get_config_descriptor(dev, c, &config);
 
-		fprintf(out, "\t\t[%i]Configuration: %i %02Xh\n",
+		fprintf(out, "    [%i] Configuration: %i %02Xh\n",
 				c, config->bConfigurationValue,
 				config->bConfigurationValue);
 
 		if (usbGetStringAsciiOrWarn(handle, config->iConfiguration,
 									stringbuf, sizeof(stringbuf),
 									err) > 0) {
-			fprintf(out, "\t\t\tDescription: %s\n", stringbuf);
+			fprintf(out, "      Description: %s\n", stringbuf);
 		}
 
-		fprintf(out, "\t\t\tInterfaces (%i):\n", config->bNumInterfaces);
+		fprintf(out, "      Interfaces (%i):\n", config->bNumInterfaces);
 
 		const struct libusb_interface *inter;
 		const struct libusb_interface_descriptor *interdesc;
@@ -211,44 +211,44 @@ static void printDetails(libusb_device_handle *handle,
 		for (int i = 0; i < config->bNumInterfaces; i++) {
 			inter = &config->interface[i];
 
-			fprintf(out, "\t\t\t\t[%i] Alternate settings (%i):\n",
+			fprintf(out, "        [%i] Alternate settings (%i):\n",
 					i, inter->num_altsetting);
 
 			for(int j = 0; j < inter->num_altsetting; j++) {
 				interdesc = &inter->altsetting[j];
 
-				fprintf(out, "\t\t\t\t\t[%i] Setting: %i %02Xh\n",
+				fprintf(out, "          [%i] Setting: %i %02Xh\n",
 						j, interdesc->bAlternateSetting,
 						interdesc->bAlternateSetting);
 
-				fprintf(out, "\t\t\t\t\t\tInterface number: %i %02Xh\n",
+				fprintf(out, "            Interface number: %i %02Xh\n",
 						interdesc->bInterfaceNumber,
 						interdesc->bInterfaceNumber);
 
-				fprintf(out, "\t\t\t\t\t\tInterface class: %02Xh ",
+				fprintf(out, "            Interface class: %02Xh ",
 						interdesc->bInterfaceClass);
 				printClass(interdesc->bInterfaceClass, out);
 				fprintf(out, "\n");
 
-				fprintf(out, "\t\t\t\t\t\tSubclass: %02Xh ",
+				fprintf(out, "            Subclass: %02Xh\n",
 						interdesc->bInterfaceSubClass);
 
-				fprintf(out, "\t\t\t\t\t\tProtocol: %02Xh ",
+				fprintf(out, "            Protocol: %02Xh\n",
 						interdesc->bInterfaceProtocol);
 
 				if (usbGetStringAsciiOrWarn(handle, interdesc->iInterface,
 											stringbuf, sizeof(stringbuf),
 											err) > 0) {
-					fprintf(out, "\t\t\t\t\t\tDescription: %s\n", stringbuf);
+					fprintf(out, "            Description: %s\n", stringbuf);
 				}
 
-				fprintf(out, "\t\t\t\t\t\tEndpoints (%i):\n",
+				fprintf(out, "            Endpoints (%i):\n",
 						interdesc->bNumEndpoints);
 
 				for(int k = 0; k < interdesc->bNumEndpoints; k++) {
 					epdesc = &interdesc->endpoint[k];
 
-					fprintf(out, "\t\t\t\t\t\t\t[%i]Endpoint: %i %02Xh ",
+					fprintf(out, "              [%i] Endpoint: %i %02Xh ",
 							k, epdesc->bEndpointAddress,
 							epdesc->bEndpointAddress);
                     switch (epdesc->bmAttributes & 0x04) {
