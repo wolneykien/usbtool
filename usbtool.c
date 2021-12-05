@@ -159,7 +159,7 @@ int main(int argc, char **argv)
     char            *myName = argv[0], *s, *rxBuffer = NULL;
     FILE            *fp;
 
-    while((opt = getopt(argc, argv, "?hv:p:V:P:S:d:D:O:e:n:tbw")) != -1){
+    while((opt = getopt(argc, argv, "?hv:p:V:P:S:d:D:O:e:n:t:bw")) != -1){
         switch(opt){
         case 'h':
         case '?':   /* -h or -? (print this help and exit) */
