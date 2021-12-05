@@ -89,6 +89,9 @@ static int usbGetStringAsciiOrWarn(libusb_device_handle *handle, int index,
 								   char *buf, int buflen, FILE *err) {
 	int len;
 
+    if (!handle) return -1;
+    if (index <= 0) return -1;
+
 	len = libusb_get_string_descriptor_ascii(handle, index, buf, buflen);
 
 	if (len < 0 && err) {
