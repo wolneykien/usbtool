@@ -37,19 +37,25 @@ COMMANDS
                     Standard requests are answered by the driver, class
                     requests by the class implementation (e.g. HID, CDC) and
                     vendor requests by custom code.
+
       recipient ... Recipient of the request in the device. Can be "device",
                     "interface", "endpoint" or "other". For standard and
                     class requests, the specification defines a recipient for
                     each request. For vendor requests, choose whatever your
                     code expects.
+
       request ..... 8 bit numeric value identifying the request.
+
       value ....... 16 bit numeric value passed to the device.
+
       index ....... another 16 bit numeric value passed to the device.
+
     Use options -v, -V, -p and -P to single out a particular device. Use
     options -d or -D to to send data in an OUT request. Use options -n, -O
     and -b to determine what to do with data received in an IN request.
 
   interrupt in|out
+
     Sends or receives data on an interrupt-out resp. -in endpoint.
     Use options -v, -V, -p and -P to single out a particular device. Use
     options -d or -D to to send data to an OUT endpoint. Use options -n, -O
