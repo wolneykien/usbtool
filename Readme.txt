@@ -28,6 +28,10 @@ COMMANDS
     This command prints a list of devices found on all available USB busses.
     Options -v, -V, -p and -P can be used to filter the list.
 
+  info
+    Prints information about each matching device. Options -v, -V, -p
+    and -P can be used to filter the list.
+
   control in|out <type> <recipient> <request> <value> <index>
     Sends a control-in or control-out request to the device. The request
     parameters are:
